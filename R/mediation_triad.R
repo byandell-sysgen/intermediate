@@ -1,10 +1,12 @@
-#' Triad scatter plot for mediator and target
+#' Triad scatter plot for target on mediator given driver
 #' 
-#' Triad plot. Currently relies on \code{sdp} to provide lines, but want to use
-#' coefficients from model fit with \code{\link{mediation_test}} to get lines for
-#' each column of driver. Note that the plot uses column \code{info} to provide
-#' additional information, which here is the \code{chr} of mediator. The plot uses
-#' the mediator position on its home chromosome, which is not really what is wanted.
+#' Explores how target is explained by mediator and driver.
+#' If mediator explains most of the driver effect on target,
+#' then driver lines will be indistinguishable.
+#' However, if driver has more information than the mediator
+#' about the target, lines will be separated.
+#' Parallel lines indicate driver and mediator have additive
+#' effects on target; otherwise relationship is more complicated. 
 #' 
 #' @param target vector or 1-column matrix with target values
 #' @param mediator vector or 1-column matrix with mediator values
@@ -12,7 +14,28 @@
 #' @param covar_tar optional covariates for target
 #' @param covar_med optional covariates for mediator
 #' @param fitFunction function to fit models with driver, target and mediator
+#' @param sdp optional sum across driver pattern to collapse columns of driver matrix
 #' @param ... additional arguments
+#' 
+#' @details 
+#' Plot method shows target (vertical axis) against mediator (horizontal axis)
+#' with plot symbol identifying individuals (rows) by some summary of the driver.
+#' Regression lines highlight effects of driver columns.
+#' This works best when columns of driver are on the same scale, and even better
+#' if the row values across column entries are positive summing to 1.
+#' 
+#' Plot label may be for column with largest row value (\code{monad}),
+#' or a concatenation of labels for the two largest row values (\code{dyad}).
+#' Lines may correspond to \code{monad} or to \code{sdp}. 
+#' 
+#' Driver columns may be compressed to 3 columns using \code{sdp} to 
+#' Simplify Dyad Pattern
+#' (idea taken from genetics \code{sdp} = SNP distribution pattern). 
+#' Basically, the \code{sdp} recoded in base 2 separates columns of
+#' driver into two groups: with 8 columns, \code{sdp} = 2 = 00000010 separate column 2 from
+#' the other columns, while \code{sdp} = 5 = 00000101 separates columns 1 and 3 from the others.
+#' 
+#' Summary method shows coefficients from model fit of target on mediator and driver.
 #' 
 #' @examples
 #' data(Tmem68)
@@ -42,32 +65,57 @@
 #' @importFrom broom tidy
 #' @importFrom stats lm
 #' 
+
+# Want to refactor so that we specify point text (monad or dyad or ?)
+# and lines (sdp or monad or dyad). What we have is too complicated.
+# sdp = collapse columns of driver based on base 2
+# monad = label of column with largest value
+# dyad
+
 mediation_triad <- function(target, mediator, driver,
                         covar_tar = NULL, covar_med = NULL,
                         fitFunction = fitDefault,
+                        points = c("dyad", "monad"),
+                        lines = ifelse(points != "dyad", points, "monad"),
                         ...) {
   
-  # Convert any blank driver names to V1, V2, ...
+  # Convert any blank driver names to A, B, ...
   driver <- driver_blank_names(driver)
+  
+  # points and lines must by dyad, monad or a positive integer < 2^ncol(driver) 
+  choices <- c("dyad", "monad")
+  maxsdp <- 2 ^ ncol(as.matrix(driver))
+  points = points[1]
+  if(n <- pmatch(points, choices, nomatch = 0)) {
+    points <- choices[n]
+  } else {
+    points <- as.integer(points)
+    stopifnot(!is.na(points),
+              points > 0,
+              points < maxsdp)
+  }
+  if(n <- pmatch(lines, choices, nomatch = 0)) {
+    lines <- choices[n]
+  } else {
+    lines <- as.integer(lines)
+    stopifnot(!is.na(lines),
+              lines > 0,
+              lines < maxsdp)
+  }
+  
+  # ****NEED TO REFACTOR BELOW ***
   
   # Only allow one mediator for triad.
   if(ncol(mediator) > 1) {
     mediator <- mediator[,1, drop = FALSE]
   }
 
-  # Would like to have option to have line per haplo.
-  # But that requires some regression style approach, such as dividing up data
-  # or fitting allele model. Guess is this would involve fitting allele model,
-  # getting estimates of slopes for each ellele interacted with mediator,
-  # creating data frame, and adding this to ggplot object.
-  # Probably signal this with sdp = NULL option?
-  
   # Fit target and target|mediator models
   fit <- med_fits(driver, target, mediator,
                   fitFunction, covar_tar, covar_med, ...)
   
   dat <- triad_data(target, mediator, driver, 
-                    covar_tar, covar_med, ...)
+                    covar_tar, covar_med, sdp, ...)
   
   for(i in c("t.d_t","t.md_t.m")) {
     tmp <- fit$coef[[i]][seq_len(ncol(driver))]
@@ -86,7 +134,6 @@ mediation_triad <- function(target, mediator, driver,
 triad_data <- function(target, mediator, driver, 
                        covar_tar, covar_med,
                        sdp = NULL,
-                       allele = TRUE,
                        label_fn = pattern_label,
                        group_fn = pattern_sdp,
                        ...) {
@@ -109,9 +156,9 @@ triad_data <- function(target, mediator, driver,
   
   # Set up point labels and groups.
   if(is.null(label_fn))
-    label_fn <- function(driver, allele)
+    label_fn <- function(driver)
       toupper(substr(colnames(driver), 1, 1))[apply(driver, 1, function(x) which.max(x)[1])]
-  label <- label_fn(commons$driver, allele)
+  label <- label_fn(commons$driver)
   if(is.null(group_fn))
     group_fn = function(label, a, b) label
   group <- as.character(group_fn(label, sdp, colnames(commons$driver)))
