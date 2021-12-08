@@ -6,7 +6,7 @@
 \alias{ggplot_mediation_triad}
 \alias{autoplot.mediation_triad}
 \alias{plot.mediation_triad}
-\title{Triad scatter plot for mediator and target}
+\title{Triad scatter plot for target on mediator given driver}
 \usage{
 mediation_triad(
   target,
@@ -15,6 +15,8 @@ mediation_triad(
   covar_tar = NULL,
   covar_med = NULL,
   fitFunction = fitDefault,
+  points = c("dyad", "monad"),
+  lines = ifelse(points != "dyad", points, "monad"),
   ...
 )
 
@@ -28,8 +30,9 @@ ggplot_mediation_triad(
   centerline = NULL,
   fitline = FALSE,
   main = paste(tname, "by", mname, "and", dname),
-  colors = seq_len(nrow(dat)),
+  colors = seq_along(unique(dat$col)),
   size = 2,
+  inter = "+",
   ...
 )
 
@@ -71,13 +74,37 @@ ggplot_mediation_triad(
 \item{colors}{named colors to use if \code{fitline} is \code{TRUE}}
 
 \item{size}{size of text (default \code{2})}
+
+\item{sdp}{optional sum across driver pattern to collapse columns of driver matrix}
 }
 \description{
-Triad plot. Currently relies on \code{sdp} to provide lines, but want to use
-coefficients from model fit with \code{\link{mediation_test}} to get lines for
-each column of driver. Note that the plot uses column \code{info} to provide
-additional information, which here is the \code{chr} of mediator. The plot uses
-the mediator position on its home chromosome, which is not really what is wanted.
+Explores how target is explained by mediator and driver.
+If mediator explains most of the driver effect on target,
+then driver lines will be indistinguishable.
+However, if driver has more information than the mediator
+about the target, lines will be separated.
+Parallel lines indicate driver and mediator have additive
+effects on target; otherwise relationship is more complicated.
+}
+\details{
+Plot method shows target (vertical axis) against mediator (horizontal axis)
+with plot symbol identifying individuals (rows) by some summary of the driver.
+Regression lines highlight effects of driver columns.
+This works best when columns of driver are on the same scale, and even better
+if the row values across column entries are positive summing to 1.
+
+Plot label may be for column with largest row value (\code{monad}),
+or a concatenation of labels for the two largest row values (\code{dyad}).
+Lines may correspond to \code{monad} or to \code{sdp}. 
+
+Driver columns may be compressed to 3 columns using \code{sdp} to 
+Simplify Dyad Pattern
+(idea taken from genetics \code{sdp} = SNP distribution pattern). 
+Basically, the \code{sdp} recoded in base 2 separates columns of
+driver into two groups: with 8 columns, \code{sdp} = 2 = 00000010 separate column 2 from
+the other columns, while \code{sdp} = 5 = 00000101 separates columns 1 and 3 from the others.
+
+Summary method shows coefficients from model fit of target on mediator and driver.
 }
 \examples{
 data(Tmem68)

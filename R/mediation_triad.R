@@ -115,7 +115,7 @@ mediation_triad <- function(target, mediator, driver,
                   fitFunction, covar_tar, covar_med, ...)
   
   dat <- triad_data(target, mediator, driver, 
-                    covar_tar, covar_med, sdp, ...)
+                    covar_tar, covar_med, ...)
   
   for(i in c("t.d_t","t.md_t.m")) {
     tmp <- fit$coef[[i]][seq_len(ncol(driver))]
@@ -181,18 +181,73 @@ triad_data <- function(target, mediator, driver,
 #' @export
 #' 
 summary.mediation_triad <- function(object, ...) {
-  lm_tidy <- function(object, driver) {
-    form <- formula(paste("target ~ 0 + mediator",
-      ifelse(match("Sex", colnames(object$data), nomatch = 0),
-             "* Sex +",
-             "+"),
-      driver))
-    broom::tidy(stats::lm(form, object$data))
-  }
   dplyr::bind_rows(
     driver = lm_tidy(object, "group"),
     allele = lm_tidy(object, paste(object$drivers, collapse = "+")),
     .id = "model")
+}
+lm_tidy <- function(object, driver, inter = "+") {
+  form <- formula(paste("target ~ 0 + mediator",
+                        ifelse(match("Sex", colnames(object$data), nomatch = 0),
+                               paste("* Sex", inter),
+                               inter),
+                        driver))
+  dplyr::mutate_if(
+    broom::tidy(stats::lm(form, object$data)),
+    is.numeric,
+    function(x) ifelse(is.na(x), 0, x))
+}
+triad_abline <- function(object, inter = "+") {
+  fit <- lm_tidy(object, 
+                 paste0("(", paste(object$drivers, collapse = "+"), ")"),
+                 inter)
+  if(length(Sexes <- grep("^Sex", fit$term))) { # Sex covariate
+    drivers <- fit$estimate[match(object$drivers, fit$term)]
+    if(inter != "+") { # interaction
+      Sexes2 <- Sexes[grep(":", fit$term[Sexes])]
+      Sexes <- Sexes[-grep(":", fit$term[Sexes])]
+      sexes <- stringr::str_remove(fit$term[Sexes], "^Sex")
+    } else {
+      sexes <- stringr::str_remove(fit$term[Sexes], "^Sex")
+    }
+    Slopes <- grep("mediator", fit$term)
+    if(inter != "+") {
+      # We have mediator, mediator:Sex, mediator:driver and mediator:driver:Sex
+      Slopes2 <- stringr::str_split(fit$term[Slopes], ":")
+      Slopes4 <- sapply(Slopes2, length) == 3
+      Slopes3 <- sapply(Slopes2, function(x) length(grep("Sex", x))) > 0
+      slopes4 <- fit$estimate[Slopes[Slopes4]] # mediator:driver:Sex
+      slopes3 <- fit$estimate[Slopes[-1][!Slopes3[-1]]] # mediator:driver
+      slopes2 <- fit$estimate[Slopes[Slopes3 & !Slopes4]] # mediator:Sex
+      # mediator and sex
+      slopes <- fit$estimate[Slopes[1]]
+      slopes <- c(slopes, slopes + slopes2)
+      # mediator and drive (and sex effect on driver)
+      slopes3 <- c(slopes3, rep(slopes3, length(Sexes) - 1) + slopes4)
+    } else {
+      slopes <- fit$estimate[Slopes]
+      slopes <- c(slopes[1], slopes[1] + slopes[-1])
+    }
+    out <- data.frame(
+      driver = rep(object$drivers, length(sexes)),
+      Sex = rep(sexes, rep(length(drivers), length(sexes))),
+      intercept = rep(fit$estimate[Sexes], rep(length(object$drivers), length(sexes))) +
+        rep(drivers, length(sexes)),
+      slope = rep(slopes, rep(length(drivers), length(sexes))))
+    if(inter != "+") {
+      out$intercept <- out$intercept +
+        c(rep(0, length(object$drivers)), fit$estimate[Sexes2])
+      out$slope <- out$slope + slopes3
+    }
+    out
+  } else { # No Sex covariate
+    drivers <- fit$estimate[match(object$drivers, fit$term)]
+    slopes <- fit$estimate[grep("mediator", fit$term)]
+    out <- data.frame(
+      driver = object$drivers,
+      intercept = drivers,
+      slope = rep(slopes, length(drivers)))
+  }
 }
 #' @param x object of class \code{mediation_triad}
 #' @param tname target name (default \code{"target"})
@@ -210,8 +265,9 @@ ggplot_mediation_triad <- function(x,
                              tname = "target", mname = "mediator", dname = "driver",
                              centerline = NULL, fitline = FALSE,
                              main = paste(tname, "by", mname, "and", dname),
-                             colors = seq_len(nrow(dat)),
+                             colors = seq_along(unique(dat$col)),
                              size = 2,
+                             inter = "+",
                              ...) {
   
   p <- ggplot2::ggplot(x$data) +
@@ -247,10 +303,8 @@ ggplot_mediation_triad <- function(x,
 
   if(fitline) {
     # Add fitted model line.
-    dat <- data.frame(slope = x$coef_med[x$med_name],
-                      intercept = x$coef_med[x$drivers],
-                      col = x$drivers,
-                      row.names = x$drivers)
+    dat <- triad_abline(x, inter)
+    dat$col <- dat$driver
     if(nrow(dat) == length(colors)) {
       if(!is.null(names(colors)))
         dat$col <- names(colors)
