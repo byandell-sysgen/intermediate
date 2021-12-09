@@ -110,8 +110,8 @@ mediation_triad <- function(target, mediator, driver,
   }
   
   # ****NEED TO REFACTOR BELOW ***
-  # Recode the fitline and inter options
-  
+  # Fix triad_abline when no sex but interaction
+  # Separate out summary by model, or create print option
   
   # Only allow one mediator for triad.
   if(ncol(mediator) > 1) {
@@ -183,16 +183,37 @@ triad_data <- function(target, mediator, driver,
 
   dat
 }
+#' @param x object of class \code{summary.mediation_triad}
+#' 
+#' @rdname mediation_triad
+#' @export
+#' 
+print.summary.mediation_triad <- function(x, ...) {
+  cat("Model fit by column of driver column")
+  print(knitr::kable(
+    dplyr::select(
+      dplyr::filter(x,
+                    model == "allele"),
+      -model)))
+  cat("\nModel fit by driver group")
+  print(knitr::kable(
+    dplyr::select(
+      dplyr::filter(x,
+                    model == "driver"),
+      -model)))
+}
 #' @param object object of class \code{mediation_triad}
 #' 
 #' @rdname mediation_triad
 #' @export
 #' 
 summary.mediation_triad <- function(object, ...) {
-  dplyr::bind_rows(
+  out <- dplyr::bind_rows(
     driver = lm_tidy(object, "group"),
     allele = lm_tidy(object, paste(object$drivers, collapse = "+")),
     .id = "model")
+  class(out) <- c("summary.mediation_triad", class(out))
+  out
 }
 lm_tidy <- function(object, driver, inter = "+") {
   form <- formula(paste("target ~ 0 + mediator",

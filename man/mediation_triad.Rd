@@ -2,6 +2,7 @@
 % Please edit documentation in R/mediation_triad.R
 \name{mediation_triad}
 \alias{mediation_triad}
+\alias{print.summary.mediation_triad}
 \alias{summary.mediation_triad}
 \alias{ggplot_mediation_triad}
 \alias{autoplot.mediation_triad}
@@ -19,6 +20,8 @@ mediation_triad(
   lines = ifelse(points != "dyad", points, "monad"),
   ...
 )
+
+\method{print}{summary.mediation_triad}(x, ...)
 
 \method{summary}{mediation_triad}(object, ...)
 
@@ -55,9 +58,9 @@ ggplot_mediation_triad(
 
 \item{...}{additional arguments}
 
-\item{object}{object of class \code{mediation_triad}}
-
 \item{x}{object of class \code{mediation_triad}}
+
+\item{object}{object of class \code{mediation_triad}}
 
 \item{tname}{target name (default \code{"target"})}
 
