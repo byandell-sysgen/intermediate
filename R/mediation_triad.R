@@ -189,13 +189,13 @@ triad_data <- function(target, mediator, driver,
 #' @export
 #' 
 print.summary.mediation_triad <- function(x, ...) {
-  cat("Model fit by column of driver column")
+  cat("Model fit with driver columns")
   print(knitr::kable(
     dplyr::select(
       dplyr::filter(x,
                     model == "allele"),
       -model)))
-  cat("\nModel fit by driver group")
+  cat("\nModel fit with driver groups")
   print(knitr::kable(
     dplyr::select(
       dplyr::filter(x,
@@ -248,7 +248,7 @@ triad_abline <- function(object, fitlines = "driver") {
       Slopes4 <- sapply(Slopes2, length) == 3
       Slopes3 <- sapply(Slopes2, function(x) length(grep("Sex", x))) > 0
       slopes4 <- fit$estimate[Slopes[Slopes4]] # mediator:driver:Sex
-      slopes3 <- fit$estimate[Slopes[-1][!Slopes3[-1]]] # mediator:driver
+      slopes3 <- fit$estimate[Slopes[!Slopes3]][-1] # mediator:driver
       slopes2 <- fit$estimate[Slopes[Slopes3 & !Slopes4]] # mediator:Sex
       # mediator and sex
       slopes <- fit$estimate[Slopes[1]]
@@ -274,6 +274,7 @@ triad_abline <- function(object, fitlines = "driver") {
   } else { # No Sex covariate
     drivers <- fit$estimate[match(object$drivers, fit$term)]
     slopes <- fit$estimate[grep("mediator", fit$term)]
+    slopes <- slopes[1] + slopes[-1]
     out <- data.frame(
       driver = object$drivers,
       intercept = drivers,
