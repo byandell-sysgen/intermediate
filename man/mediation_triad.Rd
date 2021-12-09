@@ -32,7 +32,7 @@ ggplot_mediation_triad(
   main = paste(tname, "by", mname, "and", dname),
   colors = seq_along(unique(dat$col)),
   size = 2,
-  inter = "+",
+  fitlines = c("driver", "parallel", "sdp"),
   ...
 )
 
@@ -67,13 +67,13 @@ ggplot_mediation_triad(
 
 \item{centerline}{horizontal line at value (default = \code{NULL}); set to \code{NA} for no line or \code{NULL} for mean}
 
-\item{fitline}{include fit line from coefficients in \code{x} if \code{TRUE}}
-
 \item{main}{main title (defautl \code{tname})}
 
 \item{colors}{named colors to use if \code{fitline} is \code{TRUE}}
 
 \item{size}{size of text (default \code{2})}
+
+\item{fitlines}{use driver-specific (\code{"driver"}--the default), parallel (\code{"parallel"}), or 3 SDP lines (\code{"sdp"}) if \code{sdp} in \code{\link{mediation_triad}} is not \code{NULL}}
 
 \item{sdp}{optional sum across driver pattern to collapse columns of driver matrix}
 }
@@ -124,6 +124,8 @@ med_triad <- mediation_triad(target = target,
 
 summary(med_triad)
 
-ggplot_mediation_triad(med_triad, tname = "Tmem68", mname = "Nnt")
+ggplot_mediation_triad(med_triad, tname = "Tmem68", mname = "Nnt", fitlines = "sdp")
+
+ggplot_mediation_triad(med_triad, tname = "Tmem68", mname = "Nnt", fitlines = "driver")
 
 }

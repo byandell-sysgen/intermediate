@@ -55,7 +55,9 @@
 #' 
 #' summary(med_triad)
 #' 
-#' ggplot_mediation_triad(med_triad, tname = "Tmem68", mname = "Nnt")
+#' ggplot_mediation_triad(med_triad, tname = "Tmem68", mname = "Nnt", fitlines = "sdp")
+#' 
+#' ggplot_mediation_triad(med_triad, tname = "Tmem68", mname = "Nnt", fitlines = "driver")
 #' 
 #' @export
 #' 
@@ -104,6 +106,8 @@ mediation_triad <- function(target, mediator, driver,
   }
   
   # ****NEED TO REFACTOR BELOW ***
+  # Recode the fitline and inter options
+  
   
   # Only allow one mediator for triad.
   if(ncol(mediator) > 1) {
@@ -197,7 +201,9 @@ lm_tidy <- function(object, driver, inter = "+") {
     is.numeric,
     function(x) ifelse(is.na(x), 0, x))
 }
-triad_abline <- function(object, inter = "+") {
+triad_abline <- function(object, fitlines = "driver") {
+  inter <- ifelse(fitlines == "driver", "*", "+")
+  
   fit <- lm_tidy(object, 
                  paste0("(", paste(object$drivers, collapse = "+"), ")"),
                  inter)
@@ -254,7 +260,7 @@ triad_abline <- function(object, inter = "+") {
 #' @param mname mediator name (default \code{"mediator"})
 #' @param dname driver name (default \code{"driver"})
 #' @param centerline horizontal line at value (default = \code{NULL}); set to \code{NA} for no line or \code{NULL} for mean
-#' @param fitline include fit line from coefficients in \code{x} if \code{TRUE}
+#' @param fitlines use driver-specific (\code{"driver"}--the default), parallel (\code{"parallel"}), or 3 SDP lines (\code{"sdp"}) if \code{sdp} in \code{\link{mediation_triad}} is not \code{NULL}
 #' @param main main title (defautl \code{tname})
 #' @param colors named colors to use if \code{fitline} is \code{TRUE}
 #' @param size size of text (default \code{2})
@@ -267,8 +273,10 @@ ggplot_mediation_triad <- function(x,
                              main = paste(tname, "by", mname, "and", dname),
                              colors = seq_along(unique(dat$col)),
                              size = 2,
-                             inter = "+",
+                             fitlines = c("driver","parallel","sdp"),
                              ...) {
+  
+  fitlines = match.arg(fitlines)
   
   p <- ggplot2::ggplot(x$data) +
     ggplot2::ggtitle(main)
@@ -301,9 +309,9 @@ ggplot_mediation_triad <- function(x,
       ggplot2::geom_hline(yintercept = centerline, linetype = "dashed", col = "grey60")
   }
 
-  if(fitline) {
+  if(fitlines %in% c("driver", "parallel")) {
     # Add fitted model line.
-    dat <- triad_abline(x, inter)
+    dat <- triad_abline(x, fitlines)
     dat$col <- dat$driver
     if(nrow(dat) == length(colors)) {
       if(!is.null(names(colors)))
