@@ -55,9 +55,13 @@
 #' 
 #' summary(med_triad)
 #' 
-#' ggplot_mediation_triad(med_triad, tname = "Tmem68", mname = "Nnt", fitlines = "sdp")
+#' ggplot_mediation_triad(med_triad, tname = "Tmem68", mname = "Nnt",
+#'                        fitlines = "sdp")
 #' 
-#' ggplot_mediation_triad(med_triad, tname = "Tmem68", mname = "Nnt", fitlines = "driver")
+#' colors <- c("gray", "blue", rep("gray", 6))
+#' names(colors) <- LETTERS[1:8]
+#' ggplot_mediation_triad(med_triad, tname = "Tmem68", mname = "Nnt", 
+#'                        fitlines = "driver", col = colors)
 #' 
 #' @export
 #' 
@@ -313,11 +317,12 @@ ggplot_mediation_triad <- function(x,
     # Add fitted model line.
     dat <- triad_abline(x, fitlines)
     dat$col <- dat$driver
-    if(nrow(dat) == length(colors)) {
+    drivers <- unique(dat$driver)
+    if(length(drivers) == length(colors)) {
       if(!is.null(names(colors)))
-        dat$col <- names(colors)
+        dat$col <- names(colors)[match(dat$col, drivers)]
       else
-        names(colors) <- dat$col
+        names(colors) <- drivers
       dat$col <- factor(dat$col, names(colors))
     }
     p <- p +
@@ -326,7 +331,7 @@ ggplot_mediation_triad <- function(x,
                      intercept = .data$intercept,
                      col = .data$col),
         data = dat)
-    if(nrow(dat) == length(colors)) {
+    if(length(drivers) == length(colors)) {
       p <- p +
         ggplot2::scale_color_manual(name = dname,
                                     values = colors)

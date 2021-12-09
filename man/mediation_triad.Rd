@@ -124,8 +124,12 @@ med_triad <- mediation_triad(target = target,
 
 summary(med_triad)
 
-ggplot_mediation_triad(med_triad, tname = "Tmem68", mname = "Nnt", fitlines = "sdp")
+ggplot_mediation_triad(med_triad, tname = "Tmem68", mname = "Nnt",
+                       fitlines = "sdp")
 
-ggplot_mediation_triad(med_triad, tname = "Tmem68", mname = "Nnt", fitlines = "driver")
+colors <- c("gray", "blue", rep("gray", 6))
+names(colors) <- LETTERS[1:8]
+ggplot_mediation_triad(med_triad, tname = "Tmem68", mname = "Nnt", 
+                       fitlines = "driver", col = colors)
 
 }
