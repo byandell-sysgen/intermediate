@@ -15,9 +15,7 @@ mediation_index(
   covar_tar = NULL,
   covar_med = NULL,
   driver_med = NULL,
-  driver_index = colnames(mediator),
-  facet_name = "chr",
-  index_name = "pos",
+  annotation_names = c(facet = "chr", index = "pos"),
   ...
 )
 
@@ -48,11 +46,7 @@ ggplot_mediation_index(
 
 \item{driver_med}{driver array for mediators}
 
-\item{driver_index}{index to driver array}
-
-\item{facet_name}{name of facet column (default `chr`)}
-
-\item{index_name}{name of index column (default `pos`)}
+\item{annotation_names}{names in annotation of columns for facet, index and, optionally, driver (default `c(facet = "chr", index = "pos", driver = NULL)`)}
 
 \item{...}{additional parameters}
 
@@ -79,17 +73,12 @@ annotation <- Tmem68$annotation[m,, drop = FALSE]
 
 # Reduce to SNP for B6
 driver_SNP <- cbind(B6 = Tmem68$driver[,2], rest = 1 - Tmem68$driver[,2])
-driver_med <- list(allele = Tmem68$driver, SNP = driver_SNP)
 
 med_index <- mediation_index(target = target,
                       mediator = mediator,
-                      driver = NULL,
+                      driver = Tmem68$driver,
                       annotation = annotation,
-                      covar_tar = Tmem68$covar,
-                      covar_med = Tmem68$covar,
-                      driver_med = driver_med,
-                      driver_index = names(driver_med),
-                      index_name = "probs")
+                      covar_tar = Tmem68$covar)
 summary(med_index)
 ggplot2::autoplot(med_index)
 

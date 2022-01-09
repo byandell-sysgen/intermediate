@@ -1,8 +1,8 @@
 Package: intermediate
 Type: Package
 Title: eQTl/pQTL Mediation analysis
-Version: 0.8.2
-Date: 2021-09-29
+Version: 0.8.3
+Date: 2022-01-09
 Authors@R: c(person("Petr Simecek", role = "aut"),
   person("Steven Munger", role = "aut"),
   person("Gary Churchill", role = "aut", email = "gary.churchill@jax.org"),
@@ -22,9 +22,9 @@ Imports: ggplot2,
          purrr,
          broom,
          corpcor, mnormt, rlang,
-         utils
+         knitr, utils
 Suggests:
-         knitr, rmarkdown
+         rmarkdown
 VignetteBuilder: knitr
 License: GPL-3
 LazyData: true

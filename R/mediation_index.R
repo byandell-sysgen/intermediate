@@ -9,9 +9,7 @@
 #' @param covar_tar optional covariates for target
 #' @param covar_med optional covariates for mediator
 #' @param driver_med driver array for mediators
-#' @param driver_index index to driver array
-#' @param facet_name name of facet column (default `chr`)
-#' @param index_name name of index column (default `pos`)
+#' @param annotation_names names in annotation of columns for facet, index and, optionally, driver (default `c(facet = "chr", index = "pos", driver = NULL)`)
 #' @param ... additional parameters
 #'
 #' @importFrom purrr map transpose
@@ -36,17 +34,12 @@
 #' 
 #' # Reduce to SNP for B6
 #' driver_SNP <- cbind(B6 = Tmem68$driver[,2], rest = 1 - Tmem68$driver[,2])
-#' driver_med <- list(allele = Tmem68$driver, SNP = driver_SNP)
 #' 
 #' med_index <- mediation_index(target = target,
 #'                       mediator = mediator,
-#'                       driver = NULL,
+#'                       driver = Tmem68$driver,
 #'                       annotation = annotation,
-#'                       covar_tar = Tmem68$covar,
-#'                       covar_med = Tmem68$covar,
-#'                       driver_med = driver_med,
-#'                       driver_index = names(driver_med),
-#'                       index_name = "probs")
+#'                       covar_tar = Tmem68$covar)
 #' summary(med_index)
 #' ggplot2::autoplot(med_index)
 #' 
@@ -54,29 +47,36 @@
 #'
 mediation_index <- function(target, mediator, driver = NULL,
                             annotation = NULL, covar_tar = NULL, covar_med = NULL,
-                            driver_med = NULL, driver_index = colnames(mediator),
-                            facet_name = "chr", index_name = "pos", ...) {
+                            driver_med = NULL,
+                            annotation_names = c(facet = "chr", index = "pos"),
+                            ...) {
   # Mediation test over interval
   
-  nmed <- ifelse(is.array(driver_med), dim(driver_med)[3], length(driver_med))
+  # Mediation driver is typically a 3-D array with third dimension corresponding to mediator columns.
+  # If only one driver, then do reduced version.
+  driver <- as.matrix(driver)
+  if(is.null(driver_med)) {
+    dn <- dimnames(driver)
+    dn[[3]] <- "mediator"
+    driver_med <- array(driver, c(dim(driver), 1), dn)
+  }
+  if(3 != length(dim(driver_med)))
+    return(NULL)
+  nmed <- dim(driver_med)[3]
   
   # Propagate mediator over third dimension of driver_med.
   mediator <- as.matrix(mediator)[, rep(1, nmed), drop = FALSE]
-  colnames(mediator) <- {
-    if(is.array(driver_med))
-      dimnames(driver_med)[[3]]
-    else
-      names(driver_med)
-  }
+  colnames(mediator) <- dimnames(driver_med)[[3]]
 
   # Propagate annotation over 
   annotation <- annotation[rep(1, nmed),, drop = FALSE]
   annotation$id <- colnames(mediator)
   annotation$driver_names <- colnames(mediator)
-  stopifnot(length(driver_index) == nmed)
-  annotation[[index_name]] <- driver_index
-  if(is.null(annotation[[facet_name]]))
-    annotation[[facet_name]] <- ""
+  stopifnot(length(annotation$id) == nmed)
+  
+  annotation[[annotation_names["index"]]] <- annotation$id
+  if(is.null(annotation[[annotation_names["facet"]]]))
+    annotation[[annotation_names["facet"]]] <- ""
   if(!is.data.frame(annotation)) {
     # Could happen if was NULL originally
     annotation <- dplyr::as_tibble(annotation)
@@ -91,9 +91,10 @@ mediation_index <- function(target, mediator, driver = NULL,
     covar_med = covar_med,
     driver = driver,
     driver_med = driver_med,
-    index_name = index_name, ...)
+    annotation_names = annotation_names, ...)
   
   class(out) <- c("mediation_index", class(out))
+  attr(out, "annotation_names") <- annotation_names
   out
 }
 #' @export

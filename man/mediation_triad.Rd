@@ -31,7 +31,6 @@ ggplot_mediation_triad(
   mname = "mediator",
   dname = "driver",
   centerline = NULL,
-  fitline = FALSE,
   main = paste(tname, "by", mname, "and", dname),
   colors = seq_along(unique(dat$col)),
   size = 2,
@@ -56,6 +55,8 @@ ggplot_mediation_triad(
 
 \item{fitFunction}{function to fit models with driver, target and mediator}
 
+\item{points, lines}{type of points and lines, from \code{c("dyad","monad")}}
+
 \item{...}{additional arguments}
 
 \item{x}{object of class \code{mediation_triad}}
@@ -72,7 +73,7 @@ ggplot_mediation_triad(
 
 \item{main}{main title (defautl \code{tname})}
 
-\item{colors}{named colors to use if \code{fitline} is \code{TRUE}}
+\item{colors}{named colors to use if \code{fitlines} is \code{TRUE}}
 
 \item{size}{size of text (default \code{2})}
 

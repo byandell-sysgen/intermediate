@@ -14,6 +14,7 @@
 #' @param covar_tar optional covariates for target
 #' @param covar_med optional covariates for mediator
 #' @param fitFunction function to fit models with driver, target and mediator
+#' @param points,lines type of points and lines, from \code{c("dyad","monad")}
 #' @param sdp optional sum across driver pattern to collapse columns of driver matrix
 #' @param ... additional arguments
 #' 
@@ -65,12 +66,14 @@
 #' 
 #' @export
 #' 
-#' @importFrom stringr str_split
-#' @importFrom ggplot2 aes autoplot facet_wrap geom_hline geom_smooth 
+#' @importFrom stringr str_remove str_split
+#' @importFrom ggplot2 aes autoplot facet_wrap geom_hline geom_line geom_smooth 
 #' geom_text ggplot ggtitle scale_color_discrete xlab ylab
 #' @importFrom broom tidy
 #' @importFrom stats lm
-#' 
+#' @importFrom knitr kable
+#' @importFrom rlang .data
+#'  
 
 # Want to refactor so that we specify point text (monad or dyad or ?)
 # and lines (sdp or monad or dyad). What we have is too complicated.
@@ -112,6 +115,7 @@ mediation_triad <- function(target, mediator, driver,
   # ****NEED TO REFACTOR BELOW ***
   # Fix triad_abline when no sex but interaction
   # Separate out summary by model, or create print option
+  # Incorporate points and lines options
   
   # Only allow one mediator for triad.
   if(ncol(mediator) > 1) {
@@ -193,14 +197,14 @@ print.summary.mediation_triad <- function(x, ...) {
   print(knitr::kable(
     dplyr::select(
       dplyr::filter(x,
-                    model == "allele"),
-      -model)))
+                    .data$model == "allele"),
+      -.data$model)))
   cat("\nModel fit with driver groups")
   print(knitr::kable(
     dplyr::select(
       dplyr::filter(x,
-                    model == "driver"),
-      -model)))
+                    .data$model == "driver"),
+      -.data$model)))
 }
 #' @param object object of class \code{mediation_triad}
 #' 
@@ -288,14 +292,14 @@ triad_abline <- function(object, fitlines = "driver") {
 #' @param centerline horizontal line at value (default = \code{NULL}); set to \code{NA} for no line or \code{NULL} for mean
 #' @param fitlines use driver-specific (\code{"driver"}--the default), parallel (\code{"parallel"}), or 3 SDP lines (\code{"sdp"}) if \code{sdp} in \code{\link{mediation_triad}} is not \code{NULL}
 #' @param main main title (defautl \code{tname})
-#' @param colors named colors to use if \code{fitline} is \code{TRUE}
+#' @param colors named colors to use if \code{fitlines} is \code{TRUE}
 #' @param size size of text (default \code{2})
 #' 
 #' @rdname mediation_triad
 #' @export
 ggplot_mediation_triad <- function(x, 
                              tname = "target", mname = "mediator", dname = "driver",
-                             centerline = NULL, fitline = FALSE,
+                             centerline = NULL,
                              main = paste(tname, "by", mname, "and", dname),
                              colors = seq_along(unique(dat$col)),
                              size = 2,

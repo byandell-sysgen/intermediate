@@ -395,12 +395,13 @@ driver_blank_names <- function(driver) {
   if(is.null(driver)) 
     return(NULL)
   
-  driver <- as.matrix(driver)
-  if(is.null(colnames(driver))) {
-    colnames(driver) <- LETTERS[seq_len(ncol(driver))]
-  }
-  if(any((cold <- colnames(driver)) == "")) {
-    colnames(driver)[cold] <- LETTERS[seq_len(ncol(driver))][cold]
+  if(is.array(driver)) {
+    if(is.null(colnames(driver))) {
+      colnames(driver) <- LETTERS[seq_len(ncol(driver))]
+    }
+    if(any((cold <- colnames(driver)) == "")) {
+      colnames(driver)[cold] <- LETTERS[seq_len(ncol(driver))][cold]
+    }
   }
   driver
 }
