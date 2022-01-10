@@ -17,7 +17,7 @@ mediation_joint(
   driver_med = NULL,
   intcovar = NULL,
   fitFunction = fitDefault,
-  index_name = "pos",
+  annotation_names = c(index = "pos"),
   ...
 )
 
@@ -52,7 +52,7 @@ ggplot_mediation_joint(
 
 \item{fitFunction}{function to fit models with driver, target and mediator}
 
-\item{index_name}{name of index column (default `pos`)}
+\item{annotation_names}{names in annotation of columns for facet, index and, optionally, driver (default `c(facet = "chr", index = "pos", driver = NULL)`)}
 
 \item{...}{additional parameters}
 

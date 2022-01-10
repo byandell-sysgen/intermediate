@@ -11,7 +11,7 @@
 #' @param driver_med optional driver matrix for mediators
 #' @param intcovar optional interactive covariates (assumed same for `mediator` and `target`)
 #' @param fitFunction function to fit models with driver, target and mediator
-#' @param index_name name of index column (default `pos`)
+#' @param annotation_names names in annotation of columns for facet, index and, optionally, driver (default `c(facet = "chr", index = "pos", driver = NULL)`)
 #' @param ... additional parameters
 #'
 #' @importFrom purrr map transpose
@@ -57,7 +57,7 @@ mediation_joint <- function(target, mediator, driver, annotation,
                           covar_tar=NULL, covar_med=NULL,
                           driver_med = NULL, intcovar = NULL,
                           fitFunction = fitDefault,
-                          index_name = "pos",
+                          annotation_names = c(index = "pos"),
                           ...) {
   
   if(is.null(mediator))
@@ -83,7 +83,7 @@ mediation_joint <- function(target, mediator, driver, annotation,
       .id = "id"),
     annotation,
     by = "id")
-  attr(out, "annotation_names") <- c(index = index_name)
+  attr(out, "annotation_names") <- annotation_names
   class(out) <- c("mediation_joint", class(out))
   
   out
