@@ -1,8 +1,8 @@
 Package: intermediate
 Type: Package
 Title: eQTl/pQTL Mediation analysis
-Version: 0.8.3
-Date: 2022-01-09
+Version: 0.8.4
+Date: 2022-01-27
 Authors@R: c(person("Petr Simecek", role = "aut"),
   person("Steven Munger", role = "aut"),
   person("Gary Churchill", role = "aut", email = "gary.churchill@jax.org"),

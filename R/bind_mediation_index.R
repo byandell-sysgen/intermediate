@@ -1,3 +1,6 @@
+#' Bind mediation objects
+#' 
+#' @export
 bind_mediation_index <- function(object, id_name = "mediator_id", ...) {
   # Remake one element as mediation_index object.
   out <- object[[1]]
