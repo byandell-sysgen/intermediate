@@ -71,10 +71,6 @@ fitDefault_internal <- function(driver,
   
   # Form model matrix from additive covariates.
   if(!is.null(addcovar)) {
-    if(is.data.frame(addcovar)) {
-      form <- stats::as.formula(paste(" ~ ", paste(colnames(addcovar), collapse = "+")))
-      addcovar <- stats::model.matrix(form, data = addcovar)[,-1]
-    }
     X <- addcovar
     if(is.null(dim(X))) {
       X <- as.matrix(X)
@@ -85,10 +81,7 @@ fitDefault_internal <- function(driver,
   # Add interactive covaraties.
   if(!is.null(intcovar)) {
     if(ncol(driver) > 1) {
-      int.sub.matrix <- 
-        model.matrix(as.formula(paste("~", paste(colnames(intcovar), collapse = "+"))), 
-                     as.data.frame(intcovar))[,-1]
-      driverbyintcovar <- driver[,-1, drop = FALSE] * int.sub.matrix
+      driverbyintcovar <- driver[,-1, drop = FALSE] * intcovar
       X <- cbind(driver, X, driverbyintcovar)
     } else {
       X <- cbind(driver, X)

@@ -1,8 +1,8 @@
 Package: intermediate
 Type: Package
 Title: eQTl/pQTL Mediation analysis
-Version: 0.8.4
-Date: 2022-01-27
+Version: 0.9.1
+Date: 2022-11-13
 Authors@R: c(person("Petr Simecek", role = "aut"),
   person("Steven Munger", role = "aut"),
   person("Gary Churchill", role = "aut", email = "gary.churchill@jax.org"),
@@ -29,4 +29,5 @@ VignetteBuilder: knitr
 License: GPL-3
 LazyData: true
 URL: https://github.com/churchill-lab/intermediate
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.2
+Encoding: UTF-8
