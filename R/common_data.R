@@ -96,12 +96,7 @@ convert_matrix <- function(object,
                            row_names = seq_len(nrow(object))) {
   if(is.null(object))
     return(NULL)
-  
-  if(is.data.frame(object)) {
-    form <- stats::as.formula(paste(" ~ ", paste(colnames(object), collapse = "+")))
-    object <- stats::model.matrix(form, data = object)[,-1]
-  }
-  
+
   if(!is.array(object))
     object <- as.matrix(object)
   stopifnot(is.numeric(object))

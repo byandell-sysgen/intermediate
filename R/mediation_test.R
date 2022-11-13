@@ -295,6 +295,7 @@ mediation_test_internal <- function(target, mediator, driver, annotation,
     m <- match(rownames(mediator), rownames(covar_med), nomatch = 0)
     covar_med <- covar_med[m,, drop = FALSE]
     # Convert to matrix.
+    covar_med <- covar_matrix(covar_med)
     covar_med <- convert_matrix(covar_med,
                                 paste0("covM", seq_len(ncol(covar_med))), 
                                 rownames(mediator))
