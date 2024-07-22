@@ -12,6 +12,7 @@
 #' @param fitFunction function to fit models
 #' @param annotation_names names in annotation of columns for facet, index and, optionally, driver (default `c(facet = "chr", index = "pos", driver = NULL)`)
 #' @param verbose If TRUE display information about the progress
+#' @param cores use multiple cores if value is 0 or >1
 #' @param ... additional parameters
 #' 
 #' @details 
@@ -38,7 +39,10 @@
 #' ggplot_mediation_scan(med_scan)
 #' 
 #' @export
-#' @importFrom purrr map transpose
+#' @importFrom purrr transpose
+#' @importFrom future availableCores multicore plan sequential
+#'             supportsMulticore
+#' @importFrom furrr future_map
 
 mediation_scan <- function(target, 
                            mediator, 
@@ -49,8 +53,9 @@ mediation_scan <- function(target,
                            method=c("double-LR-diff", "ignore", "LR-diff"), 
                            fitFunction = fitDefault,
                            annotation_names = c(facet = "chr", index = "pos", driver = NULL),
-                           verbose=TRUE, ...) {
-  
+                           verbose=TRUE,
+                           cores = 0, ...) {
+  future_plan(cores)
   # Get common data.
   commons <- common_data(target, mediator, driver, covar, intcovar = intcovar,
                          ...)
@@ -115,7 +120,8 @@ mediation_scan <- function(target,
   }
   output <- annotation
   # Compute Likelihood Ratio
-  output$LR <- unlist(purrr::map(med_pur, mapfn, target, covar, driver, loglik0))
+  output$LR <- unlist(furrr::future_map(med_pur, mapfn,
+    target, covar, driver, loglik0, .progress = TRUE))
   attr(output, "targetFit") <- loglik0
   attr(output, "annotation_names") <- annotation_names
   class(output) <- c("mediation_scan", "data.frame")

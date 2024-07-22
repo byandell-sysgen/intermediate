@@ -34,6 +34,7 @@ mediation_scan(
   fitFunction = fitDefault,
   annotation_names = c(facet = "chr", index = "pos", driver = NULL),
   verbose = TRUE,
+  cores = 0,
   ...
 )
 
@@ -75,6 +76,8 @@ mediation_scan(
 \item{annotation_names}{names in annotation of columns for facet, index and, optionally, driver (default `c(facet = "chr", index = "pos", driver = NULL)`)}
 
 \item{verbose}{If TRUE display information about the progress}
+
+\item{cores}{use multiple cores if value is 0 or >1}
 
 \item{facets}{names of facets to subset}
 
