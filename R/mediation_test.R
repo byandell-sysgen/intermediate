@@ -397,7 +397,7 @@ summary.mediation_test <- function(object, ..., lod = FALSE) {
         lod_mediator = "LR_mediator")
   }
   
-  dplyr::arrange(out, .data$pvalue)
+  dplyr::arrange(out, .data$LR_mediation)
 }
 driver_blank_names <- function(driver) {
   if(is.null(driver)) 
