@@ -13,9 +13,11 @@
 #' @param test Type of CMST test.
 #' @param fitFunction function to fit models with driver, target and mediator
 #' @param annotation_names names in annotation of columns for facet, index and, optionally, driver (default `c(facet = "chr", index = "pos", driver = NULL)`)
+#' @param cores use multiple cores if value is 0 or >1
 #' @param ... additional parameters
 #'
-#' @importFrom purrr map transpose
+#' @importFrom purrr transpose
+#' @importFrom furrr future_map
 #' @importFrom stringr str_replace
 #' @importFrom dplyr any_of arrange bind_rows desc filter group_by left_join
 #' mutate one_of rename ungroup
@@ -95,8 +97,11 @@ mediation_test <- function(target, mediator, driver, annotation = NULL,
                           driver_med = NULL, intcovar = NULL,
                           test = c("wilcoxon","binomial","joint","normal"),
                           fitFunction = fitDefault,
-                          annotation_names = c(facet = "chr", index = "pos", driver = "qtl_pos"),
+                          annotation_names = c(facet = "chr", index = "pos",
+                                               driver = "qtl_pos"),
+                          cores = 0,
                           ...) {
+  future_plan(cores)
   
   ## Need to enable different covariates for different mediators.
   
@@ -146,7 +151,7 @@ mediation_test <- function(target, mediator, driver, annotation = NULL,
     
   # Transpose result. Make sure elemnts of result are data frames.
   result <-
-    purrr::map(
+    furrr::future_map(
       purrr::transpose(result),
       function(x) {
         if(is.data.frame(x[[1]])) {
@@ -220,7 +225,7 @@ mediation_test <- function(target, mediator, driver, annotation = NULL,
               dplyr::left_join(
                 # Join best test among decided with annotation.
                 dplyr::bind_rows(
-                  purrr::map(
+                  furrr::future_map(
                     split(
                       decided,
                       decided$id),
@@ -341,7 +346,7 @@ mediation_test_internal <- function(target, mediator, driver, annotation,
   # Workhorse: CMST on each mediator.
   mediator <- as.data.frame(mediator, make.names = FALSE)
 
-  purrr::map(
+  furrr::future_map(
     purrr::transpose(
       list(
         mediator = mediator,

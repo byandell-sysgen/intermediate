@@ -43,6 +43,7 @@ mediation_test(
   test = c("wilcoxon", "binomial", "joint", "normal"),
   fitFunction = fitDefault,
   annotation_names = c(facet = "chr", index = "pos", driver = "qtl_pos"),
+  cores = 0,
   ...
 )
 
@@ -100,6 +101,8 @@ mediation_test(
 \item{fitFunction}{function to fit models with driver, target and mediator}
 
 \item{annotation_names}{names in annotation of columns for facet, index and, optionally, driver (default `c(facet = "chr", index = "pos", driver = NULL)`)}
+
+\item{cores}{use multiple cores if value is 0 or >1}
 
 \item{not_type}{biotypes to not include}
 
