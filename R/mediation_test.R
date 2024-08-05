@@ -163,7 +163,8 @@ mediation_test <- function(target, mediator, driver, annotation = NULL,
           else
             NULL
         }
-      })
+      },
+      .progress = TRUE)
   
   if(!is.null(result$normF) && all(is.na(result$normF)))
     result$normF <- NULL
@@ -231,7 +232,8 @@ mediation_test <- function(target, mediator, driver, annotation = NULL,
                       decided$id),
                       # Pick best of decided models.
                       # In case of ties, pick in order causal, reactive, independent.
-                      function(x) x[which.min(x$pvalue)[1],, drop = FALSE])),
+                      function(x) x[which.min(x$pvalue)[1],, drop = FALSE],
+                    .progress = TRUE)),
                 annotation,
                by = "id"),
               by = "id"),
@@ -346,15 +348,15 @@ mediation_test_internal <- function(target, mediator, driver, annotation,
   # Workhorse: CMST on each mediator.
   mediator <- as.data.frame(mediator, make.names = FALSE)
 
+  furrrfn <- function(x) cmstfn(x, driver, target, covar_tar, covar_med, driver_med,
+    intcovar, fitFunction, testFunction, common, ...)
   furrr::future_map(
     purrr::transpose(
       list(
         mediator = mediator,
         driver_names = driver_names)),
-    cmstfn, driver, target, 
-    covar_tar, covar_med,
-    driver_med, intcovar,
-    fitFunction, testFunction, common, ...)
+    furrrfn,
+    .progress = TRUE)
 }
 
 #' @export

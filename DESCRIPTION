@@ -1,7 +1,7 @@
 Package: intermediate
 Type: Package
 Title: eQTl/pQTL Mediation analysis
-Version: 1.0.1
+Version: 1.0.2
 Date: 2024-08-05
 Authors@R: c(person("Petr Simecek", role = "aut"),
   person("Steven Munger", role = "aut"),
