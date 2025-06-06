@@ -403,13 +403,16 @@ driver_blank_names <- function(driver) {
   if(is.null(driver)) 
     return(NULL)
   
+  # Fixed to work with matrices and 3D arrays.
   if(is.array(driver)) {
-    if(is.null(colnames(driver))) {
-      colnames(driver) <- LETTERS[seq_len(ncol(driver))]
+    col_driver <- dimnames(driver)[[2]]
+    if(is.null(col_driver)) {
+      col_driver <- LETTERS[seq_along(col_driver)]
     }
-    if(any((cold <- colnames(driver)) == "")) {
-      colnames(driver)[cold] <- LETTERS[seq_len(ncol(driver))][cold]
+    if(any((cold <- col_driver) == "")) {
+      col_driver[cold] <- LETTERS[seq_along(col_driver)][cold]
     }
+    dimnames(driver)[[2]] <- col_driver
   }
   driver
 }
