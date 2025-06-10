@@ -32,9 +32,9 @@ ggplot_mediation_triad(
   dname = "driver",
   centerline = NULL,
   main = paste(tname, "by", mname, "and", dname),
-  colors = seq_along(unique(dat$col)),
+  colors = NULL,
   size = 2,
-  fitlines = c("driver", "parallel", "sdp"),
+  fitlines = c("driver", "parallel", "sdp", "sdp-parallel"),
   ...
 )
 

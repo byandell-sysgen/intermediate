@@ -213,31 +213,33 @@ print.summary.mediation_triad <- function(x, ...) {
 #' 
 summary.mediation_triad <- function(object, ...) {
   out <- dplyr::bind_rows(
-    driver = lm_tidy(object, "group"),
-    allele = lm_tidy(object, paste(object$drivers, collapse = "+")),
+    driver = lm_tidy(object$data, "group"),
+    allele = lm_tidy(object$data, paste(object$drivers, collapse = "+")),
     .id = "model")
   class(out) <- c("summary.mediation_triad", class(out))
   out
 }
 lm_tidy <- function(object, driver, inter = "+") {
   form <- formula(paste("target ~ 0 + mediator",
-                        ifelse(match("Sex", colnames(object$data), nomatch = 0),
+                        ifelse(match("Sex", colnames(object), nomatch = 0),
                                paste("* Sex", inter),
                                inter),
                         driver))
   dplyr::mutate_if(
-    broom::tidy(stats::lm(form, object$data)),
+    broom::tidy(stats::lm(form, object)),
     is.numeric,
     function(x) ifelse(is.na(x), 0, x))
 }
-triad_abline <- function(object, fitlines = "driver") {
-  inter <- ifelse(fitlines == "driver", "*", "+")
+triad_abline <- function(object, drivers,
+  fitlines = c("driver","parallel","sdp", "sdp-parallel")) {
+  fitlines = match.arg(fitlines)
+  inter <- ifelse(fitlines %in% c("driver", "sdp"), "*", "+")
   
   fit <- lm_tidy(object, 
-                 paste0("(", paste(object$drivers, collapse = "+"), ")"),
+                 paste0("(", paste(drivers, collapse = "+"), ")"),
                  inter)
   if(length(Sexes <- grep("^Sex", fit$term))) { # Sex covariate
-    drivers <- fit$estimate[match(object$drivers, fit$term)]
+    fit_drivers <- fit$estimate[match(drivers, fit$term)]
     if(inter != "+") { # interaction
       Sexes2 <- Sexes[grep(":", fit$term[Sexes])]
       Sexes <- Sexes[-grep(":", fit$term[Sexes])]
@@ -261,29 +263,50 @@ triad_abline <- function(object, fitlines = "driver") {
       slopes3 <- c(slopes3, rep(slopes3, length(Sexes) - 1) + slopes4)
     } else {
       slopes <- fit$estimate[Slopes]
+      # The `slopes[-1]` are offsets from `slopes[1]`.
       slopes <- c(slopes[1], slopes[1] + slopes[-1])
     }
     out <- data.frame(
-      driver = rep(object$drivers, length(sexes)),
-      Sex = rep(sexes, rep(length(drivers), length(sexes))),
-      intercept = rep(fit$estimate[Sexes], rep(length(object$drivers), length(sexes))) +
-        rep(drivers, length(sexes)),
-      slope = rep(slopes, rep(length(drivers), length(sexes))))
+      driver = rep(drivers, length(sexes)),
+      Sex = rep(sexes, rep(length(fit_drivers), length(sexes))),
+      intercept = rep(fit$estimate[Sexes], rep(length(drivers), length(sexes))) +
+        rep(fit_drivers, length(sexes)),
+      slope = rep(slopes, rep(length(fit_drivers), length(sexes))))
+    # Adjust slope and intercept for interaction with `Sex`.
     if(inter != "+") {
       out$intercept <- out$intercept +
-        c(rep(0, length(object$drivers)), fit$estimate[Sexes2])
+        c(rep(0, length(drivers)), fit$estimate[Sexes2])
       out$slope <- out$slope + slopes3
     }
-    out
   } else { # No Sex covariate
-    drivers <- fit$estimate[match(object$drivers, fit$term)]
+    fit_drivers <- fit$estimate[match(drivers, fit$term)]
     slopes <- fit$estimate[grep("mediator", fit$term)]
     slopes <- slopes[1] + slopes[-1]
     out <- data.frame(
-      driver = object$drivers,
-      intercept = drivers,
-      slope = rep(slopes, length(drivers)))
+      driver = drivers,
+      intercept = fit_drivers,
+      slope = rep(slopes, length(fit_drivers)))
   }
+  out
+}
+ggplot_triad_abline <- function(data, drivers, fitlines, colors, dname,
+                                scale_color = TRUE) {
+  # Add fitted model line.
+  dat <- triad_abline(data, drivers, fitlines)
+  dat$col <- dat$driver
+  drivers <- unique(dat$driver)
+  if(length(drivers) == length(colors)) {
+    if(!is.null(names(colors)))
+      dat$col <- names(colors)[match(dat$col, drivers)]
+    else
+      names(colors) <- drivers
+    dat$col <- factor(dat$col, names(colors))
+  }
+  ggplot2::geom_abline(
+      ggplot2::aes(slope = .data$slope,
+                   intercept = .data$intercept,
+                   col = .data$col),
+      data = dat)
 }
 #' @param x object of class \code{mediation_triad}
 #' @param tname target name (default \code{"target"})
@@ -301,9 +324,10 @@ ggplot_mediation_triad <- function(x,
                              tname = "target", mname = "mediator", dname = "driver",
                              centerline = NULL,
                              main = paste(tname, "by", mname, "and", dname),
-                             colors = seq_along(unique(dat$col)),
+                             colors = NULL,
                              size = 2,
-                             fitlines = c("driver","parallel","sdp"),
+                             fitlines = c("driver","parallel","sdp",
+                                          "sdp-parallel"),
                              ...) {
   
   fitlines = match.arg(fitlines)
@@ -336,38 +360,34 @@ ggplot_mediation_triad <- function(x,
   }
   if(!is.na(centerline)) {
     p <- p +
-      ggplot2::geom_hline(yintercept = centerline, linetype = "dashed", col = "grey60")
+      ggplot2::geom_hline(yintercept = centerline, linetype = "dashed",
+                          col = "grey60")
   }
 
   if(fitlines %in% c("driver", "parallel")) {
-    # Add fitted model line.
-    dat <- triad_abline(x, fitlines)
-    dat$col <- dat$driver
-    drivers <- unique(dat$driver)
-    if(length(drivers) == length(colors)) {
-      if(!is.null(names(colors)))
-        dat$col <- names(colors)[match(dat$col, drivers)]
-      else
-        names(colors) <- drivers
-      dat$col <- factor(dat$col, names(colors))
-    }
-    p <- p +
-      ggplot2::geom_abline(
-        ggplot2::aes(slope = .data$slope,
-                     intercept = .data$intercept,
-                     col = .data$col),
-        data = dat)
-    if(length(drivers) == length(colors)) {
-      p <- p +
-        ggplot2::scale_color_manual(name = dname,
-                                    values = colors)
-    }
+    if(is.null(colors)) colors <- seq_along(unique(x$drivers))
+    p <- p + ggplot_triad_abline(x$data, x$drivers, fitlines, colors, dname)
+    if((length(x$drivers) == length(colors)))
+      p <- p + ggplot2::scale_color_manual(name = dname, values = colors)
+  } else { # `fitlines %in% c("sdp", "sdp-parallel")`
+    # Make drivers to be `sdpn` with `n` = 0,1,2
+    data <- x$data
+    data$driver = paste0("sdp", data$group)
+    drivers <- sort(unique(data$driver))
+    col <- seq_along(drivers)
+    # Add dummy columns for SDP values.
+    sdps <- model.matrix(~ driver, data)
+    colnames(sdps) <- drivers
+    sdps[,1] <- 1 - apply(sdps[,-1, drop=FALSE], 1, sum)
+    data <- data.frame(data, sdps)
     
-  } else {
-    p <- p + 
+    p <- p + ggplot_triad_abline(data, drivers, fitlines, col, dname) +
       ggplot2::aes(col = .data$group) +
-      ggplot2::scale_color_discrete(name = dname) +
-      ggplot2::geom_smooth(method = "lm", se=FALSE, formula = "y ~ x")
+      ggplot2::scale_color_discrete(name = dname)
+#    p <- p + 
+#      ggplot2::aes(col = .data$group) +
+#      ggplot2::scale_color_discrete(name = dname) +
+#      ggplot2::geom_smooth(method = "lm", se=FALSE, formula = "y ~ x")
   }
   p
 }
