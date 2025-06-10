@@ -29,7 +29,7 @@ pattern_sdp <- function(label, sdp = NULL, geno_names = sort(unique(label))) {
     label
   } else {
     alt <- haplos[sdp_to_logical(sdp, haplos)]
-    as.character(sapply(stringr::str_split(label, ""), 
+    paste0("sdp", sapply(stringr::str_split(label, ""), 
                  function(x, alt) sum(x %in% alt), alt))
   }
 }

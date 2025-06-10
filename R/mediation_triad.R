@@ -171,9 +171,10 @@ triad_data <- function(target, mediator, driver,
     label_fn <- function(driver)
       toupper(substr(colnames(driver), 1, 1))[apply(driver, 1, function(x) which.max(x)[1])]
   label <- label_fn(commons$driver)
+  # Group labels.
   if(is.null(group_fn))
     group_fn = function(label, a, b) label
-  group <- as.character(group_fn(label, sdp, colnames(commons$driver)))
+  group <- group_fn(label, sdp, colnames(commons$driver))
   
   dat <- data.frame(commons$driver, commons$target, commons$mediator)
   if(length(commons$covar_tar))
@@ -370,9 +371,9 @@ ggplot_mediation_triad <- function(x,
     if((length(x$drivers) == length(colors)))
       p <- p + ggplot2::scale_color_manual(name = dname, values = colors)
   } else { # `fitlines %in% c("sdp", "sdp-parallel")`
-    # Make drivers to be `sdpn` with `n` = 0,1,2
+    # Set up data for SDP fit lines.
     data <- x$data
-    data$driver = paste0("sdp", data$group)
+    data$driver <- data$group
     drivers <- sort(unique(data$driver))
     col <- seq_along(drivers)
     # Add dummy columns for SDP values.
@@ -384,10 +385,6 @@ ggplot_mediation_triad <- function(x,
     p <- p + ggplot_triad_abline(data, drivers, fitlines, col, dname) +
       ggplot2::aes(col = .data$group) +
       ggplot2::scale_color_discrete(name = dname)
-#    p <- p + 
-#      ggplot2::aes(col = .data$group) +
-#      ggplot2::scale_color_discrete(name = dname) +
-#      ggplot2::geom_smooth(method = "lm", se=FALSE, formula = "y ~ x")
   }
   p
 }
