@@ -335,9 +335,13 @@ mediation_test_internal <- function(target, mediator, driver, annotation,
       cat("mediator and annotation do not match\n", file = stderr())
       return(NULL)
     }
-    driver_names <- annotation$driver_names
-    if(!is.null(driver_names))
-      driver_names <- driver_names[m]
+    if("driver_names" %in% names(annotation)) {
+      driver_names <- annotation$driver_names
+      if(!is.null(driver_names))
+        driver_names <- driver_names[m]
+    } else {
+      driver_names <- NULL
+    }
   } else {
     driver_names <- NULL
   }
