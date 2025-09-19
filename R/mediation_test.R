@@ -279,7 +279,7 @@ mediation_test_internal <- function(target, mediator, driver, annotation,
                                     cmstfn = cmst_default,
                                     ...) {
                                     
-  use_1_driver <- is.null(annotation$driver_names) | is.null(driver_med)
+  use_1_driver <- !("driver_names" %in% names(annotation)) | is.null(driver_med)
   if(use_1_driver & !is.null(driver_med))
     driver_med <- NULL
   
